@@ -3,6 +3,7 @@ Text classification
 """
 
 import util
+import re
 import operator
 from collections import Counter
 
@@ -41,7 +42,8 @@ class RuleBasedClassifier(Classifier):
         """
         super(RuleBasedClassifier, self).__init__(labels)
         # BEGIN_YOUR_CODE (around 3 lines of code expected) 
-        raise NotImplementedError("TODO:")       
+        self.blacklist = set(blacklist[:k]) if k > 0 else set(blacklist)
+        self.threshold = n
         # END_YOUR_CODE
 
     def classify(self, text):
@@ -50,7 +52,17 @@ class RuleBasedClassifier(Classifier):
         @return double y: classification score; >= 0 if positive label
         """
         # BEGIN_YOUR_CODE (around 8 lines of code expected)
-        raise NotImplementedError("TODO:")       
+        # text_cleaning_pattern = "@\S+|https?:\S+|http?:\S|[^A-Za-z0-9]+"
+        text_cleaning_pattern = "@\S+|[^A-Za-z0-9]+"
+        text = re.sub(text_cleaning_pattern, ' ', str(text).lower()).strip()
+        # print(text.split())
+        count = 0
+        for word in text.split():
+            count += int(word in self.blacklist)
+            if count == self.threshold:
+                return -1
+        return 0
+
         # END_YOUR_CODE
 
 def extractUnigramFeatures(x):
