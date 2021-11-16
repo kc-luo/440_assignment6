@@ -1,6 +1,8 @@
 """
 Text classification
 """
+import collections
+import string
 
 import util
 import re
@@ -72,7 +74,9 @@ def extractUnigramFeatures(x):
     @return dict: feature vector representation of x.
     """
     # BEGIN_YOUR_CODE (around 6 lines of code expected)
-    raise NotImplementedError("TODO:")       
+    text_cleaning_pattern = "@\S+|[^A-Za-z0-9']+"
+    text = re.sub(text_cleaning_pattern, ' ', x).strip()
+    return Counter(text.split())
     # END_YOUR_CODE
 
 
@@ -93,7 +97,8 @@ class WeightedClassifier(Classifier):
         @return double y: classification score; >= 0 if positive label
         """
         # BEGIN_YOUR_CODE (around 2 lines of code expected)
-        raise NotImplementedError("TODO:")       
+        doc = self.featureFunction(x)
+        return sum([count * self.params.get(word, 0) for word, count in doc.items()])
         # END_YOUR_CODE
 
 def learnWeightsFromPerceptron(trainExamples, featureExtractor, labels, iters = 20):
@@ -107,7 +112,16 @@ def learnWeightsFromPerceptron(trainExamples, featureExtractor, labels, iters = 
     @return dict: parameters represented by a mapping from feature (string) to value.
     """
     # BEGIN_YOUR_CODE (around 15 lines of code expected)
-    raise NotImplementedError("TODO:")           
+    clr = WeightedClassifier(labels, featureExtractor, collections.defaultdict(float))
+    for _ in range(iters):
+        for x, y in trainExamples:
+            pred = clr.classifyWithLabel(x)
+            if pred != y:
+                val = 1 if y == labels[0] else -1
+                word_vec = featureExtractor(x)
+                for word, count in word_vec.items():
+                    clr.params[word] += val * count
+    return dict(clr.params)
     # END_YOUR_CODE
 
 def extractBigramFeatures(x):
@@ -118,7 +132,21 @@ def extractBigramFeatures(x):
     @return dict: feature vector representation of x.
     """
     # BEGIN_YOUR_CODE (around 12 lines of code expected)
-    raise NotImplementedError("TODO:")       
+    res = collections.defaultdict(int)
+    token = "-BEGIN-"
+    begin = "(@\S+|[^A-Za-z0-9']+)(\s)"
+    sentences = re.sub(begin, "@", x)
+    if sentences[-1] in string.punctuation:
+        sentences = sentences[:-1]
+    lst = re.split("@", sentences)
+    for sentence in lst:
+        words = sentence.strip().split()
+        for idx, word in enumerate(words):
+            a = token if idx == 0 else words[idx-1]
+            res["{} {}".format(a, word)] += 1
+            res[word] += 1
+    return dict(res)
+
     # END_YOUR_CODE
 
 class MultiClassClassifier(object):
