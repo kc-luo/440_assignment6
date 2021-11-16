@@ -8,6 +8,7 @@ import util
 import re
 import operator
 from collections import Counter
+from copy import deepcopy
 
 class Classifier(object):
     def __init__(self, labels):
@@ -89,7 +90,7 @@ class WeightedClassifier(Classifier):
         """
         super(WeightedClassifier, self).__init__(labels)
         self.featureFunction = featureFunction
-        self.params = params
+        self.params = deepcopy(params)
 
     def classify(self, x):
         """
@@ -156,7 +157,8 @@ class MultiClassClassifier(object):
         @param list (string, Classifier): tuple of (label, classifier); each classifier is a WeightedClassifier that detects label vs NOT-label
         """
         # BEGIN_YOUR_CODE (around 2 lines of code expected)
-        raise NotImplementedError("TODO:")       
+        self.labels = [lb for lb in labels]
+        self.classifiers = [(lb, clr) for lb, clr in classifiers]
         # END_YOUR_CODE
 
     def classify(self, x):
@@ -172,7 +174,7 @@ class MultiClassClassifier(object):
         @return string y: one of the output labels
         """
         # BEGIN_YOUR_CODE (around 2 lines of code expected)
-        raise NotImplementedError("TODO:")       
+        return max(self.classify(x), key=lambda i: i[1])[0]
         # END_YOUR_CODE
 
 class OneVsAllClassifier(MultiClassClassifier):
@@ -189,7 +191,7 @@ class OneVsAllClassifier(MultiClassClassifier):
         @return list (string, double): list of labels with scores 
         """
         # BEGIN_YOUR_CODE (around 4 lines of code expected)
-        raise NotImplementedError("TODO:")       
+        return [(lb, clr.classify(x)) for lb, clr in self.classifiers]
         # END_YOUR_CODE
 
 def learnOneVsAllClassifiers( trainExamples, featureFunction, labels, perClassifierIters = 10 ):
@@ -204,6 +206,25 @@ def learnOneVsAllClassifiers( trainExamples, featureFunction, labels, perClassif
     @return list (label, Classifier)
     """
     # BEGIN_YOUR_CODE (around 10 lines of code expected)
-    raise NotImplementedError("TODO:")       
+    res = []
+    for lb in labels:
+        clr = WeightedClassifier((lb, "other"), featureFunction, collections.defaultdict(float))
+        for _ in range(perClassifierIters):
+            for x, y in trainExamples:
+                pred = clr.classifyWithLabel(x)
+                if pred == lb and y != lb:
+                    # print("pred", pred, "y", y, "lb", lb)
+                    word_vec = featureFunction(x)
+                    for word, count in word_vec.items():
+                        clr.params[word] -= count
+                        # print(word, clr.params[word])
+                elif pred == "other" and y == lb:
+                    # print("pred", pred, "y", y, "lb", lb)
+                    word_vec = featureFunction(x)
+                    for word, count in word_vec.items():
+                        clr.params[word] += count
+                        # print(word, clr.params[word])
+        res.append((lb, clr))
+    return res
     # END_YOUR_CODE
 
