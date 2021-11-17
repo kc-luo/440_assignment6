@@ -18,13 +18,28 @@ def runKMeans(k,patches,maxIter):
     """
     # This line starts you out with randomly initialized centroids in a matrix 
     # with patchSize rows and k columns. Each column is a centroid.
-    centroids = np.random.randn(patches.shape[0],k)
-
+    centroids = np.random.randn(patches.shape[0], k)
     numPatches = patches.shape[1]
 
     for i in range(maxIter):
         # BEGIN_YOUR_CODE (around 19 lines of code expected)
-        raise Exception("Not yet implemented")
+        p_expanded = np.repeat(patches[:, np.newaxis, :], k, axis=1)
+        c_expanded = np.repeat(centroids[:, :, np.newaxis], numPatches, axis=2)
+        dist = (p_expanded - c_expanded) ** 2
+        idx = np.argmin(dist, axis=1)
+        idx = np.transpose(idx)
+        idx_supp = np.eye(k)[idx]
+        print(idx_supp.shape)
+
+        supp_count = np.sum(idx_supp, axis=1)
+        print(supp_count)
+        result = np.repeat(patches[np.newaxis, :], k, axis=0) * idx_supp[:, :, np.newaxis]
+
+        ################################################################################
+        #             END OF YOUR CODE                                                 #
+        ################################################################################
+        #     return centroids
+        centroids = np.sum(result.transpose(0, 2, 1), axis=2) / supp_count[:, np.newaxis]
         # END_YOUR_CODE
 
     return centroids
